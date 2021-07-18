@@ -2,11 +2,14 @@ plugins {
     id 'org.springframework.boot' version '2.5.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id "com.moowork.node" version "1.3.1"
 }
 
 group = 'org.thesix'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
+
+apply plugin: "com.moowork.node"
 
 configurations {
     compileOnly {
@@ -44,6 +47,28 @@ dependencyManagement {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
     }
 }
+
+def webappDir = "$projectDir/frontend"
+
+task appNpmInstall(type: NpmTask) {
+    workingDir = file("${webappDir}")
+    args = ["install"]
+}
+
+task appNpmBuild(type: NpmTask) {
+    workingDir = file("${webappDir}")
+    args = ["run", "build"]
+}
+
+task copyWebApp(type: Copy) {
+    from 'frontend/build'
+    into "build/resources/main/static"
+}
+
+appNpmBuild.dependsOn(appNpmInstall)
+copyWebApp.dependsOn(appNpmBuild)
+compileJava.dependsOn(copyWebApp)
+
 
 test {
     useJUnitPlatform()
